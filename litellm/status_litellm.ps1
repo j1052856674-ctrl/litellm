@@ -19,9 +19,15 @@ try {
 
 $procOut = & wsl -d $Distro -u root -- bash -lc "pgrep -af litellm" 2>$null
 $procOk = -not [string]::IsNullOrWhiteSpace($procOut)
+$procCount = 0
+if ($procOk) {
+    $procCount = ($procOut -split "`n").Count
+}
 
 $listenOut = & wsl -d $Distro -u root -- bash -lc "ss -tlnp | grep :$Port" 2>$null
 $listenOk = -not [string]::IsNullOrWhiteSpace($listenOut)
+
+$logTail = & wsl -d $Distro -u root -- bash -lc "tail -n 20 /tmp/litellm.log" 2>$null
 
 if ($apiOk) {
     Write-Host "API health: OK (/models reachable)" -ForegroundColor Green
@@ -33,10 +39,14 @@ if ($apiOk) {
 }
 
 if ($procOk) {
-    Write-Host "Process: RUNNING" -ForegroundColor Green
+    Write-Host "Process: RUNNING ($procCount instance(s))" -ForegroundColor Green
     Write-Host $procOut
 } else {
     Write-Host "Process: NOT FOUND" -ForegroundColor Red
+}
+
+if ($procCount -gt 1) {
+    Write-Host "Warning: multiple LiteLLM processes detected. Run stop_litellm.bat and then restart the desired route." -ForegroundColor Yellow
 }
 
 if ($listenOk) {
@@ -44,6 +54,11 @@ if ($listenOk) {
     Write-Host $listenOut
 } else {
     Write-Host "Port check: NOT LISTENING on $Port" -ForegroundColor Yellow
+}
+
+if (-not $apiOk -and -not [string]::IsNullOrWhiteSpace($logTail)) {
+    Write-Host "Recent log tail:" -ForegroundColor Yellow
+    Write-Host $logTail
 }
 
 if (-not $NoPause) { Read-Host "Press Enter to close" }

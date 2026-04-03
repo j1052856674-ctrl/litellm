@@ -63,8 +63,11 @@ general_settings:
 
 - start_litellm.bat：启动 Copilot 路由
 - start_litellm_gemini.bat：启动 Gemini 路由
+- restart_litellm_gemini_clean.bat：强制清理旧实例后重启 Gemini 路由
 
-这两个启动器已启用自动切换（会自动先停旧实例再启新实例）。
+这些启动器已启用自动切换。
+其中 Gemini 启动器默认走“干净重启”流程，会先停旧实例、等待 4000 释放，再启动新实例。
+同时会做进程清理检查：如果 WSL 内有多个残留 LiteLLM 进程，脚本会优先清理，避免旧实例继续占用 4000。
 
 命令行方式：
 
@@ -112,7 +115,18 @@ Invoke-RestMethod -Uri 'http://127.0.0.1:4000/models' -Headers @{ Authorization 
 - 原因：Claude Code 未重启，仍读取旧环境变量。
 - 处理：完全退出 Claude Code 后重新打开。
 
-3. WSL 无法访问 GitHub Copilot
+3. `/models` 正常，但 `/chat/completions` 一直报旧 Key 错误
+- 原因：WSL 内可能同时跑着多份 LiteLLM，4000 被旧实例占用。
+- 快速定位：先运行 `status_litellm.bat`，看 `Process` 实例数是否大于 1。
+- 处理：优先运行 `restart_litellm_gemini_clean.bat`，或先 `stop_litellm.bat` 再运行目标启动器。
+
+4. 启动后端口不对或怀疑不是当前实例在响应
+- 快速定位：
+- 先看 `status_litellm.bat`
+- 再看 `/tmp/litellm.log`
+- 最后执行手动 debug 命令确认当前配置和 Key
+
+5. WSL 无法访问 GitHub Copilot
 - 建议在 C:\Users\Administrator\.wslconfig 使用 mirrored + autoProxy + dnsTunneling。
 
 ---
@@ -150,9 +164,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ".\update_gemini_key.ps1" -G
 ## 11. 当前状态快照（2026-04-03）
 
 1. Copilot 路由：可用（已通过最小请求验证）。
-2. Gemini 路由：服务启动与模型列表正常，但实际请求失败，当前报错为 Key 过期。
-3. 启停链路：`start_litellm.bat` 与 `start_litellm_gemini.bat` 已支持自动切换。
-4. Key 管理：`update_gemini_key.ps1` 已支持格式校验与官方接口预校验。
+2. Gemini 路由：4000 入口已恢复，`gpt-4`、`claude-sonnet-4-6`、`claude-sonnet-4-5`、`claude-opus-4-6`、`claude-haiku-4-5` 已通过实际请求验证。
+3. Gemini Claude 入口：当前统一映射到 `gemini-2.5-flash`，优先保证整体可用性。
+4. 启停链路：`start_litellm.bat` 与 `start_litellm_gemini.bat` 已支持自动切换，并补强了 stale 进程清理诊断；新增 `restart_litellm_gemini_clean.bat` 作为强制清理入口。
+5. Key 管理：`update_gemini_key.ps1` 已支持格式校验与官方接口预校验。
 
 ---
 

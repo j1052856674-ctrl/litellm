@@ -1,0 +1,52 @@
+model_list:
+  # Route Claude-style model names to Gemini backends via LiteLLM.
+  # Requires GEMINI_API_KEY in WSL environment.
+
+  # Direct Gemini model entries for quick A/B testing
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: gemini/gemini-2.5-pro
+
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+
+  - model_name: gemini-flash-latest
+    litellm_params:
+      model: gemini/gemini-flash-latest
+
+  - model_name: gemini-pro-latest
+    litellm_params:
+      model: gemini/gemini-pro-latest
+
+  - model_name: gemini-2.0-flash
+    litellm_params:
+      model: gemini/gemini-2.0-flash
+
+  # Default route
+  - model_name: gpt-4
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+
+  # Sonnet option in Claude Code
+  - model_name: claude-sonnet-4-6
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+
+  # Compatibility alias
+  - model_name: claude-sonnet-4-5
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+
+  # Opus option in Claude Code
+  - model_name: claude-opus-4-6
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+
+  # Haiku option in Claude Code
+  - model_name: claude-haiku-4-5
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+
+general_settings:
+  master_key: sk-litellm-static-key
